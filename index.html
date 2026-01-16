@@ -46,6 +46,10 @@
             /* Make borders explicit and dark for print */
             .border-print {
                 border-color: #000 !important;
+                border-width: 2px !important;
+            }
+            .border-print-light {
+                border-color: #d1d5db !important; /* Light gray for meal separators */
                 border-width: 1px !important;
             }
             .bg-print-gap {
@@ -115,52 +119,57 @@
             { id: 'm18', name: 'Eggplant stir-fry w/ pork', category: 'main' },
         ];
 
-        // Updated themes
+        // Updated themes with Alternating Week colors and darker slots for contrast
         const THEMES = {
             emerald: { 
                 primary: 'bg-emerald-600', 
                 secondary: 'bg-emerald-100', 
                 border: 'border-emerald-200', 
                 text: 'text-emerald-800', 
-                hover: 'hover:bg-emerald-50',
-                slotBreakfast: 'bg-emerald-50',
-                slotMain: 'bg-emerald-100'
+                hover: 'hover:bg-emerald-100',
+                weekOdd: 'bg-emerald-50',
+                slotBreakfast: 'bg-emerald-100',
+                slotMain: 'bg-emerald-200'
             },
             blue: { 
                 primary: 'bg-blue-600', 
                 secondary: 'bg-blue-100', 
                 border: 'border-blue-200', 
                 text: 'text-blue-800', 
-                hover: 'hover:bg-blue-50',
-                slotBreakfast: 'bg-blue-50',
-                slotMain: 'bg-blue-100'
+                hover: 'hover:bg-blue-100',
+                weekOdd: 'bg-blue-50',
+                slotBreakfast: 'bg-blue-100',
+                slotMain: 'bg-blue-200'
             },
             rose: { 
                 primary: 'bg-rose-600', 
                 secondary: 'bg-rose-100', 
                 border: 'border-rose-200', 
                 text: 'text-rose-800', 
-                hover: 'hover:bg-rose-50',
-                slotBreakfast: 'bg-rose-50',
-                slotMain: 'bg-rose-100'
+                hover: 'hover:bg-rose-100',
+                weekOdd: 'bg-rose-50',
+                slotBreakfast: 'bg-rose-100',
+                slotMain: 'bg-rose-200'
             },
             orange: { 
                 primary: 'bg-orange-600', 
                 secondary: 'bg-orange-100', 
                 border: 'border-orange-200', 
                 text: 'text-orange-800', 
-                hover: 'hover:bg-orange-50',
-                slotBreakfast: 'bg-orange-50',
-                slotMain: 'bg-orange-100'
+                hover: 'hover:bg-orange-100',
+                weekOdd: 'bg-orange-50',
+                slotBreakfast: 'bg-orange-100',
+                slotMain: 'bg-orange-200'
             },
             slate: { 
                 primary: 'bg-slate-700', 
                 secondary: 'bg-slate-100', 
                 border: 'border-slate-300', 
                 text: 'text-slate-800', 
-                hover: 'hover:bg-slate-50',
-                slotBreakfast: 'bg-slate-50',
-                slotMain: 'bg-slate-200'
+                hover: 'hover:bg-slate-100',
+                weekOdd: 'bg-slate-50',
+                slotBreakfast: 'bg-slate-200',
+                slotMain: 'bg-slate-300'
             },
         };
 
@@ -546,10 +555,15 @@
                             </div>
 
                             {/* Calendar Grid */}
-                            <div className="grid grid-cols-7 auto-rows-fr bg-gray-400 bg-print-gap gap-px border-b border-gray-400 border-print">
+                            <div className="grid grid-cols-7 auto-rows-fr bg-gray-900 bg-print-gap gap-px border-b border-gray-400 border-print">
                                 {Array.from({ length: totalDays }).map((_, dayIndex) => {
+                                    // Determine week number for alternating colors
+                                    const weekIndex = Math.floor(dayIndex / 7);
+                                    const isAlternateWeek = weekIndex % 2 === 1;
+                                    const dayBgColor = isAlternateWeek ? theme.weekOdd : 'bg-white';
+
                                     return (
-                                        <div key={dayIndex} className="bg-white min-h-[150px] flex flex-col relative group">
+                                        <div key={dayIndex} className={`${dayBgColor} min-h-[150px] flex flex-col relative group`}>
                                             {/* Day Number (Optional, just visual placeholder) */}
                                             <div className="absolute top-1 right-1 text-[10px] text-gray-400 pointer-events-none">
                                                 Day {dayIndex + 1}
@@ -568,8 +582,8 @@
                                                     else if (mealCount === 2) label = slotIndex === 0 ? 'Brunch' : 'Dinner';
                                                     else label = slotIndex === 0 ? 'Breakfast' : slotIndex === 1 ? 'Lunch' : 'Dinner';
 
-                                                    // Background color based on theme
-                                                    let bgClass = !assignedMeal ? 'bg-white' : (isBreakfast ? theme.slotBreakfast : theme.slotMain);
+                                                    // Background color logic: if assigned use slot color, else transparent to show week color
+                                                    let bgClass = !assignedMeal ? 'bg-transparent' : (isBreakfast ? theme.slotBreakfast : theme.slotMain);
 
                                                     return (
                                                         <div
@@ -577,20 +591,20 @@
                                                             onDragOver={handleDragOver}
                                                             onDrop={(e) => handleDrop(e, dayIndex, slotIndex)}
                                                             className={`
-                                                                flex-1 p-1 border-b border-gray-300 border-print last:border-0 transition-colors relative flex items-center justify-center text-center
+                                                                flex-1 p-1 border-b border-gray-100 border-print-light last:border-0 transition-colors relative flex items-center justify-center text-center
                                                                 ${!assignedMeal ? theme.hover : ''}
                                                                 ${bgClass}
                                                             `}
                                                         >
                                                             {!assignedMeal && (
-                                                                <div className="w-full h-full flex items-center justify-center text-gray-300 text-[10px] uppercase tracking-widest pointer-events-none print:hidden">
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] uppercase tracking-widest pointer-events-none print:hidden">
                                                                     {label}
                                                                 </div>
                                                             )}
 
                                                             {assignedMeal && (
                                                                 <div className="h-full w-full flex items-center justify-center group/item pl-1 pr-1 relative">
-                                                                    <span className="text-xs md:text-sm font-medium leading-tight text-gray-700 py-1">
+                                                                    <span className="text-xs md:text-sm font-medium leading-tight text-gray-800 py-1">
                                                                         {assignedMeal.name}
                                                                     </span>
                                                                     <button 
