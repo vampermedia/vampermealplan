@@ -521,13 +521,13 @@
                         <div className="w-fit mx-auto overflow-hidden bg-white rounded-xl shadow-lg border border-gray-400 flex flex-col print:shadow-none print:border-gray-400 print:overflow-visible">
                             
                             {/* Editable Calendar Title */}
-                            <div className={`p-4 border-b border-gray-300 flex justify-center items-center ${theme.secondary} bg-opacity-30 relative group`}>
+                            <div className={`p-4 print:p-2 border-b border-gray-300 flex justify-center items-center ${theme.secondary} bg-opacity-30 relative group`}>
                                 <div className="relative w-full max-w-lg flex items-center justify-center">
                                     <input 
                                         type="text" 
                                         value={calendarTitle}
                                         onChange={(e) => setCalendarTitle(e.target.value)}
-                                        className={`text-2xl md:text-3xl font-bold text-center w-full bg-transparent focus:outline-none focus:border-b-2 focus:border-gray-400 ${theme.text}`}
+                                        className={`text-2xl md:text-3xl print:text-xl font-bold text-center w-full bg-transparent focus:outline-none focus:border-b-2 focus:border-gray-400 ${theme.text}`}
                                         placeholder="Click to Edit Title (e.g., January 2024)"
                                     />
                                     <Icons.Edit className="w-5 h-5 opacity-40 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none group-hover:opacity-100 transition-opacity text-gray-500 print:hidden" />
@@ -536,9 +536,9 @@
 
                             {/* Calendar Header */}
                             <div style={{ display: 'grid', gridTemplateColumns: '0.75in repeat(7, 1.4in)' }} className="bg-gray-50 border-b border-gray-400">
-                                <div className="p-2 md:p-3"></div> {/* Empty corner for Row Titles */}
+                                <div className="p-2 md:p-3 print:p-1"></div> {/* Empty corner for Row Titles */}
                                 {daysOfWeek.map((day, i) => (
-                                    <div key={day} className={`p-2 md:p-3 text-center font-bold text-xs md:text-sm uppercase tracking-wider ${theme.text}`}>
+                                    <div key={day} className={`p-2 md:p-3 print:p-1 text-center font-bold text-xs md:text-sm uppercase tracking-wider ${theme.text}`}>
                                         <span className="hidden md:inline">{day}</span>
                                         <span className="md:hidden">{day.slice(0,3)}</span>
                                     </div>
@@ -576,7 +576,7 @@
                                                 const dayIndex = weekIndex * 7 + dayOffset;
                                                 
                                                 return (
-                                                    <div key={dayIndex} className={`${weekBgColor} min-h-[150px] flex flex-col relative group`}>
+                                                    <div key={dayIndex} className={`${weekBgColor} min-h-[150px] print:min-h-[115px] flex flex-col relative group`}>
                                                         
                                                         {/* Meal Slots */}
                                                         <div className="flex-1 flex flex-col h-full">
