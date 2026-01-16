@@ -518,7 +518,7 @@
                         </aside>
 
                         {/* Main Calendar Area */}
-                        <div className="flex-1 w-fit mx-auto overflow-hidden bg-white rounded-xl shadow-lg border border-gray-400 flex flex-col print:shadow-none print:border-gray-400 print:overflow-visible">
+                        <div className="w-fit mx-auto overflow-hidden bg-white rounded-xl shadow-lg border border-gray-400 flex flex-col print:shadow-none print:border-gray-400 print:overflow-visible">
                             
                             {/* Editable Calendar Title */}
                             <div className={`p-4 border-b border-gray-300 flex justify-center items-center ${theme.secondary} bg-opacity-30 relative group`}>
@@ -535,7 +535,7 @@
                             </div>
 
                             {/* Calendar Header */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '0.75in repeat(7, 1.25in)' }} className="bg-gray-50 border-b border-gray-400">
+                            <div style={{ display: 'grid', gridTemplateColumns: '0.75in repeat(7, 1.4in)' }} className="bg-gray-50 border-b border-gray-400">
                                 <div className="p-2 md:p-3"></div> {/* Empty corner for Row Titles */}
                                 {daysOfWeek.map((day, i) => (
                                     <div key={day} className={`p-2 md:p-3 text-center font-bold text-xs md:text-sm uppercase tracking-wider ${theme.text}`}>
@@ -546,13 +546,13 @@
                             </div>
 
                             {/* Calendar Grid (Week Rows) */}
-                            <div className="flex flex-col bg-gray-400 gap-px border-b border-gray-400">
+                            <div className="flex flex-col bg-gray-400 gap-px border-b border-gray-400 w-fit">
                                 {Array.from({ length: weekCount }).map((_, weekIndex) => {
                                     const isAlternateWeek = weekIndex % 2 === 1;
                                     const weekBgColor = isAlternateWeek ? theme.weekOdd : 'bg-white';
                                     
                                     return (
-                                        <div key={weekIndex} style={{ display: 'grid', gridTemplateColumns: '0.75in repeat(7, 1.25in)' }} className={`${weekBgColor} gap-px bg-gray-400`}>
+                                        <div key={weekIndex} style={{ display: 'grid', gridTemplateColumns: '0.75in repeat(7, 1.4in)' }} className={`${weekBgColor} gap-px bg-gray-400`}>
                                             
                                             {/* Row Title Column (Leftmost) */}
                                             <div className={`${weekBgColor} flex flex-col h-full`}>
