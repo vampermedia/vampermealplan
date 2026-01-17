@@ -467,7 +467,7 @@
                         <div className={`flex-1 w-full overflow-x-auto pb-6 lg:pb-0 ${isMobileMenuOpen ? 'hidden lg:block' : 'block'}`}>
                             
                             {/* Mobile "Open Manager" Button */}
-                            <div className="lg:hidden mb-4">
+                            <div className="lg:hidden print:hidden mb-4">
                                 <button 
                                     onClick={() => setIsMobileMenuOpen(true)}
                                     className={`w-full py-3 ${theme.primary} text-white rounded-lg shadow font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform`}
