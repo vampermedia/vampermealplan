@@ -596,14 +596,14 @@
                                                                         onDragOver={handleDragOver}
                                                                         onDrop={(e) => handleDrop(e, dayIndex, slotIndex)}
                                                                         className={`
-                                                                            flex-1 p-1 border-b border-gray-100 last:border-0 transition-colors relative flex items-center justify-center text-center
+                                                                            flex-1 p-1 border-b border-gray-100 last:border-0 transition-colors relative flex items-center justify-center text-center overflow-hidden
                                                                             ${!assignedMeal ? theme.hover : ''}
                                                                             bg-transparent
                                                                         `}
                                                                     >
                                                                         {assignedMeal && (
                                                                             <div className="h-full w-full flex items-center justify-center group/item pl-1 pr-1 relative">
-                                                                                <span className="text-xs md:text-sm font-medium leading-tight text-gray-800 py-1">
+                                                                                <span className="text-[10px] md:text-xs font-medium leading-tight text-gray-800 break-words line-clamp-3">
                                                                                     {assignedMeal.name}
                                                                                 </span>
                                                                                 <button 
