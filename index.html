@@ -163,27 +163,21 @@
         // --- Main App Component ---
         function App() {
             const [mealCount, setMealCount] = useState(3);
-            const [weekCount, setWeekCount] = useState(4); // New State for Weeks
+            const [weekCount, setWeekCount] = useState(4);
             const [currentTheme, setCurrentTheme] = useState('emerald');
             const [assignments, setAssignments] = useState({});
             const [draggingMeal, setDraggingMeal] = useState(null);
             
-            // Interaction State for Mobile/Click-to-place
-            const [selectedMeal, setSelectedMeal] = useState(null);
-            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile Menu State
+            // Interaction State for Pop-up/Modal
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const [activeSlot, setActiveSlot] = useState(null); // { dayIndex, slotIndex, isBreakfastSlot }
             
-            // New state for Calendar Title
             const [calendarTitle, setCalendarTitle] = useState('My Monthly Meal Plan');
-
-            // Meal List State
             const [breakfastMeals, setBreakfastMeals] = useState(INITIAL_BREAKFAST_MEALS);
             const [mainMeals, setMainMeals] = useState(INITIAL_MAIN_MEALS);
             
-            // New Meal Input State
             const [newMealName, setNewMealName] = useState('');
             const [newMealCategory, setNewMealCategory] = useState('main');
-
-            // Bulk Add Confirmation State
             const [showBulkConfirm, setShowBulkConfirm] = useState(false);
             const [pendingMeals, setPendingMeals] = useState([]);
 
@@ -199,7 +193,6 @@
                 return Object.values(assignments).filter(m => m.id === mealId).length;
             };
 
-            // Helper: Sort meals alphabetically
             const sortedBreakfastMeals = useMemo(() => {
                 return [...breakfastMeals].sort((a, b) => a.name.localeCompare(b.name));
             }, [breakfastMeals]);
@@ -211,7 +204,6 @@
             // Drag and Drop Handlers
             const handleDragStart = (e, meal) => {
                 setDraggingMeal(meal);
-                setSelectedMeal(meal); // Also select it for click-to-place
                 e.dataTransfer.setData("meal", JSON.stringify(meal));
                 e.dataTransfer.effectAllowed = "copy";
             };
@@ -230,7 +222,6 @@
                     placeMeal(meal, dayIndex, slotIndex);
                 }
                 setDraggingMeal(null);
-                setSelectedMeal(null);
             };
 
             // Unified placement logic
@@ -240,23 +231,16 @@
                     ...prev,
                     [key]: meal
                 }));
+                // Close modal if open
+                setActiveSlot(null);
             };
 
-            // Click Handlers for Tap-to-Place
-            const handleMealClick = (meal) => {
-                if (selectedMeal?.id === meal.id) {
-                    setSelectedMeal(null); // Deselect
-                } else {
-                    setSelectedMeal(meal);
-                }
-            };
-
+            // Click Handler for Slot (Opens Modal)
             const handleSlotClick = (dayIndex, slotIndex) => {
-                if (selectedMeal) {
-                    placeMeal(selectedMeal, dayIndex, slotIndex);
-                    // Optional: keep selected for multi-place, or clear. Let's clear for safety.
-                    setSelectedMeal(null); 
-                }
+                // Determine if this slot should show breakfast or main meals
+                // 3 Meals: Slot 0 = Breakfast
+                const isBreakfastSlot = (mealCount === 3 && slotIndex === 0);
+                setActiveSlot({ dayIndex, slotIndex, isBreakfastSlot });
             };
 
             const removeAssignment = (dayIndex, slotIndex) => {
@@ -281,32 +265,16 @@
             const handleAddMeal = (e) => {
                 e.preventDefault();
                 if (!newMealName.trim()) return;
-
-                // Split input by comma or new lines to support bulk add
                 const rawMeals = newMealName.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length > 0);
-
                 if (rawMeals.length === 0) return;
 
                 if (rawMeals.length === 1) {
-                    // Single add
-                    const newMeal = {
-                        id: Date.now().toString(),
-                        name: rawMeals[0],
-                        category: newMealCategory
-                    };
-                    if (newMealCategory === 'breakfast') {
-                        setBreakfastMeals(prev => [...prev, newMeal]);
-                    } else {
-                        setMainMeals(prev => [...prev, newMeal]);
-                    }
+                    const newMeal = { id: Date.now().toString(), name: rawMeals[0], category: newMealCategory };
+                    if (newMealCategory === 'breakfast') setBreakfastMeals(prev => [...prev, newMeal]);
+                    else setMainMeals(prev => [...prev, newMeal]);
                     setNewMealName('');
                 } else {
-                    // Bulk add detected - trigger confirmation
-                    const preparedMeals = rawMeals.map((name, index) => ({
-                        id: (Date.now() + index).toString(),
-                        name,
-                        category: newMealCategory
-                    }));
+                    const preparedMeals = rawMeals.map((name, index) => ({ id: (Date.now() + index).toString(), name, category: newMealCategory }));
                     setPendingMeals(preparedMeals);
                     setShowBulkConfirm(true);
                 }
@@ -314,11 +282,8 @@
 
             const confirmBulkAdd = () => {
                 const category = pendingMeals[0]?.category || 'main';
-                if (category === 'breakfast') {
-                    setBreakfastMeals(prev => [...prev, ...pendingMeals]);
-                } else {
-                    setMainMeals(prev => [...prev, ...pendingMeals]);
-                }
+                if (category === 'breakfast') setBreakfastMeals(prev => [...prev, ...pendingMeals]);
+                else setMainMeals(prev => [...prev, ...pendingMeals]);
                 setShowBulkConfirm(false);
                 setPendingMeals([]);
                 setNewMealName('');
@@ -326,11 +291,8 @@
 
             const handleDeleteMeal = (id, category) => {
                 if (window.confirm('Delete this meal from your list?')) {
-                    if (category === 'breakfast') {
-                        setBreakfastMeals(breakfastMeals.filter(m => m.id !== id));
-                    } else {
-                        setMainMeals(mainMeals.filter(m => m.id !== id));
-                    }
+                    if (category === 'breakfast') setBreakfastMeals(breakfastMeals.filter(m => m.id !== id));
+                    else setMainMeals(mainMeals.filter(m => m.id !== id));
                 }
             };
 
@@ -345,29 +307,45 @@
                                     <Icons.Plus className="w-5 h-5 text-emerald-600" />
                                     Confirm Multiple Meals
                                 </h3>
-                                <p className="mb-2 text-sm text-gray-600">We detected multiple items. Add these {pendingMeals.length} meals to your {pendingMeals[0]?.category === 'breakfast' ? 'Breakfast' : 'Main'} list?</p>
-                                <ul className="list-disc pl-5 mb-6 max-h-48 overflow-y-auto bg-gray-50 p-2 rounded border border-gray-200 text-sm">
-                                    {pendingMeals.map((m, i) => <li key={i} className="text-gray-700">{m.name}</li>)}
-                                </ul>
-                                <div className="flex justify-end gap-3">
-                                    <button 
-                                        onClick={() => { setShowBulkConfirm(false); setPendingMeals([]); }} 
-                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded text-sm font-medium transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        onClick={confirmBulkAdd} 
-                                        className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded text-sm font-bold shadow transition-colors"
-                                    >
-                                        Add All
-                                    </button>
+                                <p className="mb-2 text-sm text-gray-600">We detected multiple items. Add these {pendingMeals.length} meals to your list?</p>
+                                <div className="flex justify-end gap-3 mt-4">
+                                    <button onClick={() => { setShowBulkConfirm(false); setPendingMeals([]); }} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded text-sm font-medium">Cancel</button>
+                                    <button onClick={confirmBulkAdd} className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded text-sm font-bold shadow">Add All</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Header - Hidden on Print */}
+                    {/* Meal Selection Modal (Pop-up) */}
+                    {activeSlot && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setActiveSlot(null)}>
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+                                <div className={`p-4 ${theme.primary} text-white flex justify-between items-center`}>
+                                    <h3 className="font-bold text-lg">Select Meal</h3>
+                                    <button onClick={() => setActiveSlot(null)} className="p-1 hover:bg-white/20 rounded"><Icons.X className="w-5 h-5" /></button>
+                                </div>
+                                <div className="p-4 overflow-y-auto bg-gray-50">
+                                    <p className="text-sm text-gray-500 mb-3 uppercase tracking-wide font-bold">
+                                        Available {activeSlot.isBreakfastSlot ? 'Breakfast' : 'Main'} Dishes
+                                    </p>
+                                    <div className="space-y-2">
+                                        {(activeSlot.isBreakfastSlot ? sortedBreakfastMeals : sortedMainMeals).map(meal => (
+                                            <button
+                                                key={meal.id}
+                                                onClick={() => placeMeal(meal, activeSlot.dayIndex, activeSlot.slotIndex)}
+                                                className="w-full text-left p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-blue-400 hover:shadow-md transition-all flex justify-between items-center group"
+                                            >
+                                                <span className="font-medium text-gray-700">{meal.name}</span>
+                                                <span className="opacity-0 group-hover:opacity-100 text-blue-500 text-xs font-bold">Select</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Header */}
                     <header className={`print:hidden ${theme.primary} text-white shadow-md p-4 sticky top-0 z-10`}>
                         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-2">
@@ -390,202 +368,117 @@
                                     ))}
                                 </div>
 
-                                {/* Week Count Toggle */}
                                 <div className="flex bg-white text-gray-800 rounded-lg overflow-hidden text-sm font-medium shadow-sm">
                                     {[4, 5].map(num => (
-                                        <button
-                                            key={num}
-                                            onClick={() => setWeekCount(num)}
-                                            className={`px-3 py-2 hover:bg-gray-100 transition-colors flex items-center gap-1 ${weekCount === num ? `${theme.text} bg-${theme.secondary.split('-')[1]}-200 font-bold` : ''}`}
-                                            title={`${num} Weeks`}
-                                        >
-                                            <Icons.Calendar className="w-3 h-3" />
-                                            {num} Wks
+                                        <button key={num} onClick={() => setWeekCount(num)} className={`px-3 py-2 hover:bg-gray-100 transition-colors flex items-center gap-1 ${weekCount === num ? `${theme.text} bg-${theme.secondary.split('-')[1]}-200 font-bold` : ''}`}>
+                                            <Icons.Calendar className="w-3 h-3" /> {num} Wks
                                         </button>
                                     ))}
                                 </div>
 
-                                {/* Meal Count Toggle */}
                                 <div className="flex bg-white text-gray-800 rounded-lg overflow-hidden text-sm font-medium shadow-sm">
                                     {[1, 2, 3].map(num => (
-                                        <button
-                                            key={num}
-                                            onClick={() => setMealCount(num)}
-                                            className={`px-4 py-2 hover:bg-gray-100 transition-colors ${mealCount === num ? `${theme.text} bg-${theme.secondary.split('-')[1]}-200 font-bold` : ''}`}
-                                        >
+                                        <button key={num} onClick={() => setMealCount(num)} className={`px-4 py-2 hover:bg-gray-100 transition-colors ${mealCount === num ? `${theme.text} bg-${theme.secondary.split('-')[1]}-200 font-bold` : ''}`}>
                                             {num} Meal{num > 1 ? 's' : ''}
                                         </button>
                                     ))}
                                 </div>
 
-                                <button 
-                                    onClick={printCalendar}
-                                    className="flex items-center gap-2 bg-white text-gray-800 px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-100 active:scale-95 transition-transform"
-                                >
-                                    <Icons.Printer className="w-4 h-4" /> Print
-                                </button>
-                                
-                                <button 
-                                    onClick={clearBoard}
-                                    className="flex items-center justify-center bg-red-500 text-white w-10 h-10 rounded-lg shadow hover:bg-red-600 active:scale-95 transition-transform"
-                                    title="Clear entire calendar"
-                                >
-                                    <Icons.Trash2 className="w-5 h-5" />
-                                </button>
+                                <button onClick={printCalendar} className="flex items-center gap-2 bg-white text-gray-800 px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-gray-100 active:scale-95 transition-transform"><Icons.Printer className="w-4 h-4" /> Print</button>
+                                <button onClick={clearBoard} className="flex items-center justify-center bg-red-500 text-white w-10 h-10 rounded-lg shadow hover:bg-red-600 active:scale-95 transition-transform"><Icons.Trash2 className="w-5 h-5" /></button>
                             </div>
                         </div>
                     </header>
 
                     <main className="flex-1 container mx-auto p-4 flex flex-col lg:flex-row gap-6">
                         
-                        {/* Sidebar: Meal List - Hidden on Print */}
-                        <aside className={`print:hidden w-full lg:w-96 flex-shrink-0 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden sticky top-24 flex flex-col transition-all lg:h-[85vh]`}>
-                            <div className={`p-4 ${theme.secondary} border-b ${theme.border}`}>
-                                {/* Mobile Header with Toggle */}
-                                <div className="flex justify-between items-center mb-2">
-                                    <h2 className={`font-bold ${theme.text} flex items-center gap-2`}>
-                                        <Icons.Settings className="w-4 h-4" /> Meal Manager
-                                    </h2>
-                                    <button 
-                                        className="lg:hidden p-1 bg-white/50 rounded hover:bg-white/80 transition-colors"
-                                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                        title={isMobileMenuOpen ? "Hide Meals" : "Show Meals"}
-                                    >
-                                        {isMobileMenuOpen ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
-                                    </button>
-                                </div>
-                                
-                                {/* Mobile Instruction Tip */}
-                                <div className="lg:hidden text-xs text-gray-600 mb-2 flex items-center gap-1 bg-white/50 p-1.5 rounded">
-                                    <Icons.Touch className="w-3 h-3" />
-                                    {isMobileMenuOpen ? "Tap a meal below to select it." : "Expand list to see meals."}
-                                </div>
-                                
-                                {/* Add Meal Form */}
-                                <form onSubmit={handleAddMeal} className="flex flex-col gap-2 bg-white p-2 rounded-lg shadow-sm">
+                        {/* Sidebar: Mobile Logic Changed. 
+                            - On Mobile (lg:hidden): Only visible if isMobileMenuOpen is TRUE. 
+                            - On Desktop (lg:block): Always visible.
+                        */}
+                        <aside className={`
+                            print:hidden w-full lg:w-96 flex-shrink-0 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden sticky top-24 flex-col transition-all lg:h-[85vh]
+                            ${isMobileMenuOpen ? 'flex h-[80vh] fixed inset-0 z-20 m-4 mt-20' : 'hidden lg:flex'}
+                        `}>
+                            <div className={`p-4 ${theme.secondary} border-b ${theme.border} flex justify-between items-center`}>
+                                <h2 className={`font-bold ${theme.text} flex items-center gap-2`}>
+                                    <Icons.Settings className="w-4 h-4" /> Meal Manager
+                                </h2>
+                                {/* Mobile Close Button for Menu */}
+                                <button 
+                                    className="lg:hidden p-2 bg-white/50 rounded-full hover:bg-white/80"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <Icons.X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            
+                            {/* Add Meal Form */}
+                            <div className="p-4 border-b border-gray-100">
+                                <form onSubmit={handleAddMeal} className="flex flex-col gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
                                     <textarea
                                         rows="2"
-                                        placeholder="New meal name (separate multiple with commas)..."
+                                        placeholder="Add new meals here..."
                                         value={newMealName}
                                         onChange={(e) => setNewMealName(e.target.value)}
-                                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none bg-white"
                                     ></textarea>
                                     <div className="flex gap-2">
-                                        <select 
-                                            value={newMealCategory} 
-                                            onChange={(e) => setNewMealCategory(e.target.value)}
-                                            className="flex-1 px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none"
-                                        >
+                                        <select value={newMealCategory} onChange={(e) => setNewMealCategory(e.target.value)} className="flex-1 px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none bg-white">
                                             <option value="breakfast">Breakfast</option>
                                             <option value="main">Lunch/Dinner</option>
                                         </select>
-                                        <button 
-                                            type="submit"
-                                            disabled={!newMealName.trim()}
-                                            className={`px-3 py-1 text-white rounded text-sm font-medium flex items-center gap-1 ${!newMealName.trim() ? 'bg-gray-300' : theme.primary}`}
-                                        >
+                                        <button type="submit" disabled={!newMealName.trim()} className={`px-3 py-1 text-white rounded text-sm font-medium flex items-center gap-1 ${!newMealName.trim() ? 'bg-gray-300' : theme.primary}`}>
                                             <Icons.Plus className="w-4 h-4" /> Add
                                         </button>
                                     </div>
                                 </form>
                             </div>
                             
-                            {/* Meal List - Collapsible on Mobile */}
-                            <div className={`overflow-y-auto flex-1 p-4 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+                            <div className="overflow-y-auto flex-1 p-4 space-y-6 scrollbar-thin scrollbar-thumb-gray-200">
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                        <Icons.Coffee className="w-4 h-4" /> Breakfast ({sortedBreakfastMeals.length})
-                                    </h3>
+                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Icons.Coffee className="w-4 h-4" /> Breakfast ({sortedBreakfastMeals.length})</h3>
                                     <div className="space-y-2">
-                                        {sortedBreakfastMeals.length === 0 && <p className="text-xs text-gray-400 italic">No breakfast items.</p>}
-                                        {sortedBreakfastMeals.map(meal => {
-                                            const count = getMealUsageCount(meal.id);
-                                            const isSelected = selectedMeal?.id === meal.id;
-                                            return (
-                                                <div
-                                                    key={meal.id}
-                                                    draggable
-                                                    onDragStart={(e) => handleDragStart(e, meal)}
-                                                    onClick={() => handleMealClick(meal)}
-                                                    className={`
-                                                        p-3 border rounded-lg shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-sm group relative flex justify-between items-center select-none
-                                                        ${isSelected ? `ring-2 ${theme.selectRing} border-transparent` : ''}
-                                                        ${count > 0 ? `bg-gray-50 ${theme.border} border-l-4` : 'bg-white border-gray-200 hover:border-yellow-400'}
-                                                    `}
-                                                >
-                                                    <div className="flex items-center gap-2 pr-6">
-                                                        <span className={`font-medium ${count > 0 ? 'text-gray-500' : 'text-gray-700'}`}>{meal.name}</span>
-                                                        {count > 0 && (
-                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold text-white ${theme.primary}`}>
-                                                                {count}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    
-                                                    {count === 0 && <div className="w-1 h-full absolute left-0 top-0 bg-yellow-400 rounded-l-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>}
-                                                    
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); handleDeleteMeal(meal.id, 'breakfast'); }}
-                                                        className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2"
-                                                        title="Delete meal"
-                                                    >
-                                                        <Icons.X className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            );
-                                        })}
+                                        {sortedBreakfastMeals.map(meal => (
+                                            <div key={meal.id} draggable onDragStart={(e) => handleDragStart(e, meal)} className="p-3 border rounded-lg shadow-sm bg-white border-gray-200 flex justify-between items-center group relative">
+                                                <span className="font-medium text-gray-700 text-sm">{meal.name}</span>
+                                                <button onClick={() => handleDeleteMeal(meal.id, 'breakfast')} className="text-gray-300 hover:text-red-500"><Icons.X className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                        <Icons.Utensils className="w-4 h-4" /> Lunch & Dinner ({sortedMainMeals.length})
-                                    </h3>
+                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Icons.Utensils className="w-4 h-4" /> Lunch & Dinner ({sortedMainMeals.length})</h3>
                                     <div className="space-y-2">
-                                        {sortedMainMeals.length === 0 && <p className="text-xs text-gray-400 italic">No main items.</p>}
-                                        {sortedMainMeals.map(meal => {
-                                            const count = getMealUsageCount(meal.id);
-                                            const isSelected = selectedMeal?.id === meal.id;
-                                            return (
-                                                <div
-                                                    key={meal.id}
-                                                    draggable
-                                                    onDragStart={(e) => handleDragStart(e, meal)}
-                                                    onClick={() => handleMealClick(meal)}
-                                                    className={`
-                                                        p-3 border rounded-lg shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-all text-sm group relative flex justify-between items-center select-none
-                                                        ${isSelected ? `ring-2 ${theme.selectRing} border-transparent` : ''}
-                                                        ${count > 0 ? `bg-gray-50 ${theme.border} border-l-4` : 'bg-white border-gray-200 hover:border-orange-400'}
-                                                    `}
-                                                >
-                                                    <div className="flex items-center gap-2 pr-6">
-                                                        <span className={`font-medium ${count > 0 ? 'text-gray-500' : 'text-gray-700'}`}>{meal.name}</span>
-                                                        {count > 0 && (
-                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold text-white ${theme.primary}`}>
-                                                                {count}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    {count === 0 && <div className="w-1 h-full absolute left-0 top-0 bg-orange-400 rounded-l-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>}
-
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); handleDeleteMeal(meal.id, 'main'); }}
-                                                        className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2"
-                                                        title="Delete meal"
-                                                    >
-                                                        <Icons.X className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            );
-                                        })}
+                                        {sortedMainMeals.map(meal => (
+                                            <div key={meal.id} draggable onDragStart={(e) => handleDragStart(e, meal)} className="p-3 border rounded-lg shadow-sm bg-white border-gray-200 flex justify-between items-center group relative">
+                                                <span className="font-medium text-gray-700 text-sm">{meal.name}</span>
+                                                <button onClick={() => handleDeleteMeal(meal.id, 'main')} className="text-gray-300 hover:text-red-500"><Icons.X className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
                         </aside>
 
-                        {/* Main Calendar Area Wrapper - Scrollable on Mobile */}
-                        <div className="flex-1 w-full overflow-x-auto pb-6 lg:pb-0">
+                        {/* Main Calendar Area Wrapper 
+                            - On Mobile (lg:hidden): HIDDEN if menu is open.
+                        */}
+                        <div className={`flex-1 w-full overflow-x-auto pb-6 lg:pb-0 ${isMobileMenuOpen ? 'hidden lg:block' : 'block'}`}>
+                            
+                            {/* Mobile "Open Manager" Button */}
+                            <div className="lg:hidden mb-4">
+                                <button 
+                                    onClick={() => setIsMobileMenuOpen(true)}
+                                    className={`w-full py-3 ${theme.primary} text-white rounded-lg shadow font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform`}
+                                >
+                                    <Icons.Settings className="w-5 h-5" /> Open Meal Manager
+                                </button>
+                                <p className="text-center text-xs text-gray-500 mt-2 flex items-center justify-center gap-1">
+                                    <Icons.Touch className="w-3 h-3" /> Tap any box below to pick a meal
+                                </p>
+                            </div>
+
                             <div className="w-fit mx-auto overflow-hidden bg-white rounded-xl shadow-lg border border-gray-400 flex flex-col print:shadow-none print:border-gray-400 print:overflow-visible">
                                 
                                 {/* Editable Calendar Title */}
@@ -661,7 +554,7 @@
                                                                             className={`
                                                                                 flex-1 p-1 border-b border-gray-100 last:border-0 transition-colors relative flex items-center justify-center text-center overflow-hidden cursor-pointer
                                                                                 ${!assignedMeal ? theme.hover : ''}
-                                                                                ${selectedMeal && !assignedMeal ? 'bg-blue-50/50' : 'bg-transparent'}
+                                                                                ${activeSlot?.dayIndex === dayIndex && activeSlot?.slotIndex === slotIndex ? 'bg-blue-50' : 'bg-transparent'}
                                                                             `}
                                                                         >
                                                                             {assignedMeal && (
